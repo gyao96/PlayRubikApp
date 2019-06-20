@@ -75,17 +75,16 @@ function faces(rgbaColor) {
   return canvas;
 }
 
-export default class Rubic {
+export default class Rubik {
     constructor(main){
       this.main = main;
     }
 
     model() {
-      alert("hehehe")
-    this.cubes = SimpleCube(BasicParams.x, BasicParams.y, BasicParams.z, BasicParams.num, BasicParams.len, BasicParams.colors);//生成魔方小正方体
-    for (let i = 0; i < this.cubes.length; i++) {
-      let item = this.cubes[i];
-      this.main.scene.add(item);
+      this.cubes = SimpleCube(BasicParams.x, BasicParams.y, BasicParams.z, BasicParams.num, BasicParams.len, BasicParams.colors);//生成魔方小正方体
+      for (let i = 0; i < this.cubes.length; i++) {
+        let item = this.cubes[i];
+        this.main.scene.add(item);
     }
   }
 }
