@@ -9,12 +9,12 @@ export default new Router({
     {
       path: '/home',
       name: 'home',
-      component: () => import('../views/Home/Home.vue')
+      component: () => import('./views/Home/Home.vue')
     },
     {
       path: '/',
       name: 'showcube',
-      component: () => import('../views/Rubik/ShowCube.vue')
+      component: () => import('./views/Rubik/ShowCube.vue')
     }
   ]
 })

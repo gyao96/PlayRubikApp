@@ -80,11 +80,16 @@ export default class Rubik {
       this.main = main;
     }
 
-    model() {
+    model(type) {
+      // 创建魔方集合
+      this.group = new THREE.Group();
+      this.group.childType = type;
+
       this.cubes = SimpleCube(BasicParams.x, BasicParams.y, BasicParams.z, BasicParams.num, BasicParams.len, BasicParams.colors);//生成魔方小正方体
       for (let i = 0; i < this.cubes.length; i++) {
         let item = this.cubes[i];
-        this.main.scene.add(item);
-    }
+        this.group.add(item);
+      }
+      this.main.scene.add(this.group);
   }
 }
