@@ -26,7 +26,17 @@ export default {
       height: window.innerHeight,
       minPercent: 0.25,
       originHeight: 0,
-      touchLine: null
+      touchLine: null,
+      // the raycasters and params
+      raycaster: null,
+      intersect: null,
+      normalize: null,
+      targetRubik: null,
+      anotherRubik: null,
+      // sliding event on the cube
+      startPoint: null,
+      movePoint: null,
+      isRotating: false
     }
   },
   methods: {
@@ -37,13 +47,13 @@ export default {
       this.initScene()
       this.initLight()
       this.createObject()
+      this.raycaster = new THREE.Raycaster()
       window.addEventListener('resize', this.adjustView)
       document.addEventListener('mousedown', this.handleMouseEvent)
       document.addEventListener('mouseup', this.handleMouseEvent)
       document.addEventListener('mousemove', this.handleMouseEvent)
     },
     adjustView: function(){
-      console.log(this.camera.aspect)
       this.camera.aspect = window.innerWidth / window.innerHeight
       this.camera.updateProjectionMatrix()
       this.renderer.setSize(window.innerWidth, window.innerHeight)
@@ -51,8 +61,14 @@ export default {
     handleMouseEvent(e){
       switch(e.type){
         case 'mousedown': {
+          this.startPoint = null
           if(this.touchLine.isHover(e)){
             this.touchLine.enable()
+          } else {
+            this.getIntersects(e)
+            if(!this.isRotating && this.intersect){
+              this.startPoint = this.intersect.point
+            }
           }
         } break;
         case 'mouseup': {
@@ -64,9 +80,62 @@ export default {
             let frontPercent = e.clientY / window.innerHeight;
             let endPercent = 1 - frontPercent;
             this.rubikResize(frontPercent, endPercent);
+          } else {
+            this.getIntersects(e)
+            if (!this.isRotating && this.startPoint && this.intersect) {//滑动点在魔方上且魔方没有转动
+              this.movePoint = this.intersect.point;
+              // console.log(this.intersect)
+              console.log('move point', this.movePoint, 'start point', this.startPoint)
+              if (!this.movePoint.equals(this.startPoint)) {//触摸点和滑动点不一样则意味着可以得到转动向量
+                console.log('they are not the same')
+                this.rotateRubik();
+              }
+            }
           }
+        } break;
+        default: {}
+      }
+    },
+    getIntersects(e){
+      let mouse = new THREE.Vector2()
+      mouse.x = (e.clientX / this.width) * 2 - 1
+      mouse.y = -(e.clientY / this.height) * 2 + 1
+
+      this.raycaster.setFromCamera(mouse, this.camera)
+
+      let rubikTypeName
+      if(this.touchLine.screenRect.top>e.clientY){
+        this.targetRubik = this.frontRubik
+        this.anotherRubik = this.endRubik
+        rubikTypeName = 'frontView'
+      } else if(this.touchLine.screenRect.top+this.touchLine.screenRect.height<e.clientY){
+        this.targetRubik = this.endRubik
+        this.anotherRubik = this.frontRubik
+        rubikTypeName = 'endView'
+      }
+      let targetIntersect
+      for(let i=0; i<this.scene.children.length; i++){
+        if(this.scene.children[i].childType === rubikTypeName) {
+          targetIntersect = this.scene.children[i]
+          break
         }
-        default: {console.log('never here')}
+      }
+      if (targetIntersect) {
+        let intersects = this.raycaster.intersectObjects(targetIntersect.children);
+        // console.log(intersects)
+        if (intersects.length >= 2) {
+          if (intersects[0].object.cubeType === 'coverCube') {
+            this.intersect = intersects[1];
+            this.normalize = intersects[0].face.normal;
+          } else {
+            this.intersect = intersects[0];
+            this.normalize = intersects[1].face.normal;
+          }
+        } else {
+          this.intersect = null
+          this.normalize = null
+        }
+      // console.log(this.intersect)
       }
     },
     initRender: function() {
@@ -128,6 +197,28 @@ export default {
     rubikResize: function(frontPercent, endPercent){
       this.frontRubik.resizeHeight(frontPercent, 1)
       this.endRubik.resizeHeight(endPercent, -1)
+    },
+    rotateRubik: function(){
+      const self = this
+      self.isRotating = true
+      let sub = this.movePoint.sub(this.startPoint)  //计算转动向量
+      console.log('sub', sub)
+      let direction = this.targetRubik.getDirection(sub, this.normalize) //计算转动方向
+      let cubeIndex = this.intersect.object.cubeIndex;
+      this.targetRubik.rotateMove(cubeIndex, direction);
+      let anotherIndex = cubeIndex - this.targetRubik.minCubeIndex + this.anotherRubik.minCubeIndex;
+      this.anotherRubik.rotateMove(anotherIndex, direction, function () {
+        self.resetRotateParams();
+      });
+    },
+    resetRotateParams: function() {
+      this.isRotating = false;
+      this.targetRubik = null;
+      this.anotherRubik = null;
+      this.intersect = null;
+      this.normalize = null;
+      this.startPoint = null;
+      this.movePoint = null;
     }
   },
   mounted() {

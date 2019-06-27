@@ -41,6 +41,7 @@ export default class TouchLine {
     let isHover = false;
     if (touch.clientY >= this.screenRect.top && touch.clientY <= this.screenRect.top + this.screenRect.height && touch.clientX >= this.screenRect.left && touch.clientX <= this.screenRect.left + this.screenRect.width) {
       isHover = true;
+
     }
     return isHover;
   }
