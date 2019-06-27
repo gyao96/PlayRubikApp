@@ -7,8 +7,8 @@
 /* eslint-disable */
 import * as THREE from 'three'
 import Rubik from './Rubik.js'
-// import {OrbitControls} from "three/examples/jsm/controls/OrbitControls"
-require('three/examples/js/controls/OrbitControls.js')
+import TouchLine from "./TouchLine";
+// require('three/examples/js/controls/OrbitControls.js')
 export default {
   name: 'ShowCube',
   data() {
@@ -19,9 +19,14 @@ export default {
       renderer: null,
       mesh: null,
       object: null,
+      frontRubik: null,
+      endRubik: null,
       viewCenter: new THREE.Vector3(0,0,0),
-      width: window.innerWidth-30,
-      height: window.innerHeight
+      width: window.innerWidth,
+      height: window.innerHeight,
+      minPercent: 0.25,
+      originHeight: 0,
+      touchLine: null
     }
   },
   methods: {
@@ -33,12 +38,36 @@ export default {
       this.initLight()
       this.createObject()
       window.addEventListener('resize', this.adjustView)
+      document.addEventListener('mousedown', this.handleMouseEvent)
+      document.addEventListener('mouseup', this.handleMouseEvent)
+      document.addEventListener('mousemove', this.handleMouseEvent)
     },
     adjustView: function(){
       console.log(this.camera.aspect)
       this.camera.aspect = window.innerWidth / window.innerHeight
       this.camera.updateProjectionMatrix()
       this.renderer.setSize(window.innerWidth, window.innerHeight)
+    },
+    handleMouseEvent(e){
+      switch(e.type){
+        case 'mousedown': {
+          if(this.touchLine.isHover(e)){
+            this.touchLine.enable()
+          }
+        } break;
+        case 'mouseup': {
+          this.touchLine.disable()
+        } break;
+        case 'mousemove': {
+          if(this.touchLine.isActive){
+            this.touchLine.move(e.clientY);
+            let frontPercent = e.clientY / window.innerHeight;
+            let endPercent = 1 - frontPercent;
+            this.rubikResize(frontPercent, endPercent);
+          }
+        }
+        default: {console.log('never here')}
+      }
     },
     initRender: function() {
       let container = document.getElementById('container')
@@ -63,10 +92,15 @@ export default {
       this.camera.lookAt(this.viewCenter)
 
       // Orbit Control
-      this.orbitController = new THREE.OrbitControls(this.camera, this.renderer.domElement)
-      this.orbitController.enableZoom = false;
-      this.orbitController.rotateSpeed = 2;
-      this.orbitController.target = this.viewCenter
+      // this.orbitController = new THREE.OrbitControls(this.camera, this.renderer.domElement)
+      // this.orbitController.enableZoom = false;
+      // this.orbitController.rotateSpeed = 2;
+      // this.orbitController.target = this.viewCenter
+
+      // front end control
+      this.originHeight = Math.tan(22.5/180*Math.PI)*this.camera.position.z*2
+      this.originWidth = this.originHeight * this.camera.aspect;
+
 
     },
     initScene: function() {
@@ -85,8 +119,15 @@ export default {
     createObject: function () {
       this.frontRubik = new Rubik(this)
       this.frontRubik.model('frontView')
+      this.frontRubik.resizeHeight(0.5,1);
       this.endRubik = new Rubik(this)
       this.endRubik.model('endView')
+      this.endRubik.resizeHeight(0.5,-1);
+      this.touchLine = new TouchLine(this);
+    },
+    rubikResize: function(frontPercent, endPercent){
+      this.frontRubik.resizeHeight(frontPercent, 1)
+      this.endRubik.resizeHeight(endPercent, -1)
     }
   },
   mounted() {

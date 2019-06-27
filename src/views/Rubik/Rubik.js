@@ -90,6 +90,25 @@ export default class Rubik {
         let item = this.cubes[i];
         this.group.add(item);
       }
+      if(type=='frontView'){
+        this.group.rotateY(45/180*Math.PI);
+      }else{
+        this.group.rotateY((270-45) / 180 * Math.PI);
+      }
+      this.group.rotateOnAxis(new THREE.Vector3(1, 0, 1), 25 / 180 * Math.PI);
       this.main.scene.add(this.group);
   }
+
+  resizeHeight(percent, transformTag) {
+    if (percent < this.main.minPercent) {
+      percent = this.main.minPercent;
+    }
+    if (percent > (1 - this.main.minPercent)) {
+      percent = 1 - this.main.minPercent;
+    }
+    this.group.scale.set(percent, percent, percent);
+    this.group.position.y = this.main.originHeight * (0.5 - percent / 2) * transformTag;
+  }
+
+
 }
