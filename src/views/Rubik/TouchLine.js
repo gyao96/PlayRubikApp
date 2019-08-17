@@ -8,8 +8,8 @@ export default class TouchLine {
     let self = this;
 
     //实际尺寸
-    this.realWidth = 750;
-    this.realHeight = 64;
+    this.realWidth = 1536;
+    this.realHeight = 40;
 
     //逻辑尺寸
     this.width = this.main.originWidth;
@@ -37,9 +37,9 @@ export default class TouchLine {
     });
   }
 
-  isHover(touch) {
+  isHover(eventPos) {
     let isHover = false;
-    if (touch.clientY >= this.screenRect.top && touch.clientY <= this.screenRect.top + this.screenRect.height && touch.clientX >= this.screenRect.left && touch.clientX <= this.screenRect.left + this.screenRect.width) {
+    if (eventPos.clientY >= this.screenRect.top && eventPos.clientY <= this.screenRect.top + this.screenRect.height && eventPos.clientX >= this.screenRect.left && eventPos.clientX <= this.screenRect.left + this.screenRect.width) {
       isHover = true;
 
     }

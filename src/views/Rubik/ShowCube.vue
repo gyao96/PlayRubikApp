@@ -52,6 +52,9 @@ export default {
       document.addEventListener('mousedown', this.handleMouseEvent)
       document.addEventListener('mouseup', this.handleMouseEvent)
       document.addEventListener('mousemove', this.handleMouseEvent)
+      document.addEventListener('touchstart', this.handleMouseEvent)
+      document.addEventListener('touchend', this.handleMouseEvent)
+      document.addEventListener('touchmove', this.handleMouseEvent)
     },
     adjustView: function(){
       this.camera.aspect = window.innerWidth / window.innerHeight
@@ -59,10 +62,24 @@ export default {
       this.renderer.setSize(window.innerWidth, window.innerHeight)
     },
     handleMouseEvent(e){
+      console.log(e.type);
       switch(e.type){
+        case 'touchstart': {
+          this.startPoint = null
+          if(this.touchLine.isHover(e.touches[0])){
+            console.log("touchline enable")
+            this.touchLine.enable()
+          } else {
+            this.getIntersects(e.touches[0])
+            if(!this.isRotating && this.intersect){
+              this.startPoint = this.intersect.point
+            }
+          }
+        } break;
         case 'mousedown': {
           this.startPoint = null
           if(this.touchLine.isHover(e)){
+            console.log("touchline enable")
             this.touchLine.enable()
           } else {
             this.getIntersects(e)
@@ -71,19 +88,35 @@ export default {
             }
           }
         } break;
-        case 'mouseup': {
-          this.touchLine.disable()
-        } break;
         case 'mousemove': {
           if(this.touchLine.isActive){
-            this.touchLine.move(e.clientY);
+            this.touchLine.move(e.clientY)
             let frontPercent = e.clientY / window.innerHeight;
-            let endPercent = 1 - frontPercent;
-            this.rubikResize(frontPercent, endPercent);
+            let endPercent = 1 - frontPercent
+            this.rubikResize(frontPercent, endPercent)
           } else {
             this.getIntersects(e)
             if (!this.isRotating && this.startPoint && this.intersect) {//滑动点在魔方上且魔方没有转动
-              this.movePoint = this.intersect.point;
+              this.movePoint = this.intersect.point
+              // console.log(this.intersect)
+              console.log('move point', this.movePoint, 'start point', this.startPoint)
+              if (!this.movePoint.equals(this.startPoint)) {//触摸点和滑动点不一样则意味着可以得到转动向量
+                console.log('they are not the same')
+                this.rotateRubik()
+              }
+            }
+          }
+        } break;
+        case 'touchmove': {
+          if(this.touchLine.isActive){
+            this.touchLine.move(e.touches[0].clientY)
+            let frontPercent = e.touches[0].clientY / window.innerHeight
+            let endPercent = 1 - frontPercent
+            this.rubikResize(frontPercent, endPercent);
+          } else {
+            this.getIntersects(e.touches[0])
+            if (!this.isRotating && this.startPoint && this.intersect) {//滑动点在魔方上且魔方没有转动
+              this.movePoint = this.intersect.point
               // console.log(this.intersect)
               console.log('move point', this.movePoint, 'start point', this.startPoint)
               if (!this.movePoint.equals(this.startPoint)) {//触摸点和滑动点不一样则意味着可以得到转动向量
@@ -92,6 +125,10 @@ export default {
               }
             }
           }
+        } break;
+        case 'mouseup':
+        case 'touchend': {
+          this.touchLine.disable()
         } break;
         default: {}
       }
@@ -230,5 +267,14 @@ export default {
 
 <style scoped>
   #container {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-flow: column;
+    margin: 0;
+    display: block;
+  }
+  body {
+    overflow: hidden;
   }
 </style>
