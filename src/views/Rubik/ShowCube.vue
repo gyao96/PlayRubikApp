@@ -6,11 +6,11 @@
 // eslint-disable-next-line
 /* eslint-disable */
 import * as THREE from 'three'
-import TWEEN from '@tweenjs/tween.js'
 import Rubik from './Rubik.js'
 import TouchLine from './object/TouchLine.js'
 import ResetBtn from './object/ResetBtn.js'
 import ShuffleBtn from './object/ShuffleBtn.js'
+const TWEEN = require('@tweenjs/tween.js')
 // require('three/examples/js/controls/OrbitControls.js')
 export default {
   name: 'ShowCube',
