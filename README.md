@@ -11,8 +11,19 @@
 - Swipe on the blocks of the rubik cube to rotate one layer of the cube.
 - Reset and Shuffle button on the up right corner.
 
-## Build Setup
-- Project hosted on vue-cli
+## Running the code
+> Package config modified to support heroku.   
+> Build files generated in `/dist`
+``` bash
+# install dependency
+npm install
+
+# serve with express.js // serve at localhost:5000
+node server.js
+```
+
+## Native Setup with vue-cli
+change the start script in package.json form `"start": "node server.js",` to `"start": "npm run dev",`
 ``` bash
 # install dependencies
 npm install
