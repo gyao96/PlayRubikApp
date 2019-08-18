@@ -6,8 +6,11 @@
 // eslint-disable-next-line
 /* eslint-disable */
 import * as THREE from 'three'
+import TWEEN from '@tweenjs/tween.js'
 import Rubik from './Rubik.js'
-import TouchLine from "./TouchLine";
+import TouchLine from './object/TouchLine.js'
+import ResetBtn from './object/ResetBtn.js'
+import ShuffleBtn from './object/ShuffleBtn.js'
 // require('three/examples/js/controls/OrbitControls.js')
 export default {
   name: 'ShowCube',
@@ -25,8 +28,12 @@ export default {
       width: window.innerWidth,
       height: window.innerHeight,
       minPercent: 0.25,
+      initialFrontPercent: 0.75,
       originHeight: 0,
+      originWidth: 0,
       touchLine: null,
+      resetBtn: null,
+      shuffleBtn: null,
       // the raycasters and params
       raycaster: null,
       intersect: null,
@@ -37,7 +44,9 @@ export default {
       startPoint: null,
       movePoint: null,
       last_move: null,
-      isRotating: false
+      isRotating: false,
+      isAnimationEnd: false,
+      uiRatio: 0
     }
   },
   methods: {
@@ -49,6 +58,8 @@ export default {
       this.initLight()
       this.createObject()
       this.raycaster = new THREE.Raycaster()
+    },
+    initEvent(){
       window.addEventListener('resize', this.adjustView)
       document.addEventListener('mousedown', this.handleMouseEvent, {passive: false})
       document.addEventListener('mouseup', this.handleMouseEvent)
@@ -171,6 +182,14 @@ export default {
           if(this.touchLine.isHover(e.touches[0])){
             console.log("touchline enable")
             this.touchLine.enable()
+          }
+          else if(this.resetBtn.isHover(e.touches[0])){
+            console.log('reset btn enable')
+            this.resetBtn.enable()
+          }
+          else if(this.shuffleBtn.isHover(e.touches[0])){
+            console.log('shuffle btn enable')
+            this.shuffleBtn.enable()
           } else {
             this.getIntersects(e.touches[0])
             if(!this.isRotating){
@@ -187,6 +206,14 @@ export default {
           this.last_move = e
           if(this.touchLine.isHover(e)){
             this.touchLine.enable()
+          }
+          else if(this.resetBtn.isHover(e)){
+            console.log('reset btn enable')
+            this.resetBtn.enable()
+          }
+          else if(this.shuffleBtn.isHover(e)){
+            console.log('shuffle btn enable')
+            this.shuffleBtn.enable()
           } else {
             this.getIntersects(e)
             if(!this.isRotating){
@@ -237,12 +264,15 @@ export default {
           this.getIntersects(this.last_move)
           if (!this.isRotating && this.startPoint && this.intersect) {//滑动点在魔方上且魔方没有转动
             this.movePoint = this.intersect.point
-            // console.log(this.intersect)
-            console.log('move point', this.movePoint, 'start point', this.startPoint)
             if (!this.movePoint.equals(this.startPoint)) {//触摸点和滑动点不一样则意味着可以得到转动向量
               console.log('they are not the same')
               this.rotateRubik();
             }
+          } else if (!this.isRotating && this.resetBtn.isActive && this.resetBtn.isHover(this.last_move)) {
+            this.frontRubik.reset()
+            this.resetBtn.disable()
+          } else if (!this.isRotating && this.shuffleBtn.isActive && this.shuffleBtn.isHover(this.last_move)) {
+            this.shuffleRubik(this.initEvent)
           }
           e.returnValue = true
         } break;
@@ -321,8 +351,8 @@ export default {
 
       // front end control
       this.originHeight = Math.tan(22.5/180*Math.PI)*this.camera.position.z*2
-      this.originWidth = this.originHeight * this.camera.aspect;
-
+      this.originWidth = this.originHeight * this.camera.aspect
+      this.uiRatio = this.originWidth / window.innerWidth
 
     },
     initScene: function() {
@@ -341,11 +371,14 @@ export default {
     createObject: function () {
       this.frontRubik = new Rubik(this)
       this.frontRubik.model('frontView')
-      this.frontRubik.resizeHeight(0.5,1);
+      this.frontRubik.resizeHeight(0.75,1)
       this.endRubik = new Rubik(this)
       this.endRubik.model('endView')
-      this.endRubik.resizeHeight(0.5,-1);
-      this.touchLine = new TouchLine(this);
+      this.endRubik.resizeHeight(0.25,-1)
+      this.touchLine = new TouchLine(this)
+      this.resetBtn = new ResetBtn(this)
+      this.shuffleBtn = new ShuffleBtn(this)
+      this.enterAnimation()
     },
     rubikResize: function(frontPercent, endPercent){
       this.frontRubik.resizeHeight(frontPercent, 1)
@@ -364,6 +397,19 @@ export default {
         self.resetRotateParams();
       });
     },
+    shuffleRubik(callback){
+      let self = this;
+      if(!this.isRotating){
+          this.isRotating = true;
+          let stepArr = this.frontRubik.randomRotate();
+          this.endRubik.runMethodAtNo(stepArr, 0, function(){
+              if (callback){
+                  callback();
+              }
+              self.resetRotateParams();
+          });
+      }
+    },
     resetRotateParams: function() {
       this.isRotating = false;
       this.targetRubik = null;
@@ -372,6 +418,62 @@ export default {
       this.normalize = null;
       this.startPoint = null;
       this.movePoint = null;
+    },
+    enterAnimation() {
+      let self = this;
+      let isAnimationEnd = false;
+
+      let endStatus = {//目标状态
+          rotateY: this.frontRubik.group.rotation.y,
+          y: this.frontRubik.group.position.y,
+          z: this.frontRubik.group.position.z
+      }
+
+      this.frontRubik.group.rotateY(-90 / 180 * Math.PI);//把魔方设置为动画开始状态
+      this.frontRubik.group.position.y += this.originHeight/3;
+      this.frontRubik.group.position.z -= 350;
+
+      let startStatus = {//开始状态
+          rotateY: this.frontRubik.group.rotation.y,
+          y: this.frontRubik.group.position.y,
+          z: this.frontRubik.group.position.z
+      }
+
+      let tween = new TWEEN.Tween(startStatus)
+                      .to(endStatus, 2000)
+                      .easing(TWEEN.Easing.Quadratic.In)
+                      .onUpdate(function () {
+                          self.frontRubik.group.rotation.y = startStatus.rotateY;
+                          self.frontRubik.group.position.y = startStatus.y
+                          self.frontRubik.group.position.z = startStatus.z
+                      }).onComplete(function(){
+                          isAnimationEnd = true;
+                      });
+
+      function animate(time) {
+          if (!isAnimationEnd){
+              requestAnimationFrame(animate);
+              TWEEN.update();
+          }
+      }
+
+      setTimeout(function(){
+          tween.start();
+          requestAnimationFrame(animate);
+      },500)
+
+      let stepArr = this.frontRubik.randomRotate();
+      this.endRubik.runMethodAtNo(stepArr, 0, function () {
+          self.initEvent();//进场动画结束之后才能进行手动操作
+      });
+    },
+    initSize() {
+      this.touchline.enable()
+      this.touchLine.move(window.innerHeight / 4 * 3)
+      let frontPercent = 0.75
+      let endPercent = 1 - frontPercent
+      this.rubikResize(frontPercent, endPercent);
+      this.touchline.disable()
     }
   },
   mounted() {

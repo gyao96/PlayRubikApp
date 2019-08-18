@@ -1,16 +1,17 @@
 {
-  "name": "rubicdemo1",
+  "name": "play-rubik-cube",
   "version": "1.0.0",
-  "description": "experimenting with three.js",
-  "author": "winding2015_lijunren1990 <lijunren1990@aliyun.com>",
+  "description": "An interactable Rubik Cube demo implemented with three.js",
+  "author": "DaddyGang G. Yao",
   "private": true,
   "scripts": {
     "dev": "webpack-dev-server --inline --progress --config build/webpack.dev.conf.js",
-    "start": "npm run dev",
+    "start": "node server.js",
     "lint": "eslint --ext .js,.vue src",
     "build": "node build/build.js"
   },
   "dependencies": {
+    "express": "^4.17.1",
     "require": "^2.4.20",
     "three": "^0.105.2",
     "vue": "^2.5.2",

@@ -7,7 +7,7 @@ const BasicParams = {
   y: 0,
   z: 0,
   num: 3,
-  len: 50,
+  len: 70,
   //右、左、上、下、前、后
   colors: ['#ff6b02', '#dd422f',
     '#ffffff', '#fdcd02',
@@ -426,7 +426,7 @@ export default class Rubik {
 
     return matrix4;
   }
-  
+
   rotateMoveWhole(cubeIndex, direction, callback, totalTime){
       if(cubeIndex!=null&&direction!=null){
           let self = this;
@@ -464,4 +464,92 @@ export default class Rubik {
       }, totalTime);
     });
   }
+
+  U(next) {
+    this.rotateMove(this.minCubeIndex, 1.3, next, 100);
+  }
+  R(next) {
+      this.rotateMove(this.minCubeIndex, 2.4, next, 100);
+  }
+  F(next) {
+      this.rotateMove(this.minCubeIndex, 4.1, next, 100);
+  }
+  D(next) {
+      this.rotateMove(this.minCubeIndex + 6, 4.4, next, 100);
+  }
+  L(next) {
+      this.rotateMove(this.minCubeIndex + 18, 1.1, next, 100);
+  }
+  B(next) {
+      this.rotateMove(this.minCubeIndex + 2, 2.1, next, 100);
+  }
+  u(next) {
+      this.rotateMove(this.minCubeIndex, 4.4, next, 100);
+  }
+  r(next) {
+      this.rotateMove(this.minCubeIndex, 1.1, next, 100);
+  }
+  f(next) {
+      this.rotateMove(this.minCubeIndex, 2.1, next, 100);
+  }
+  d(next) {
+      this.rotateMove(this.minCubeIndex + 6, 1.3, next, 100);
+  }
+  l(next) {
+      this.rotateMove(this.minCubeIndex + 18, 2.4, next, 100);
+  }
+  b(next) {
+      this.rotateMove(this.minCubeIndex + 2, 4.1, next, 100);
+  }
+
+  randomRotate(callback) {
+      let stepNum = 21;
+      let stepArr = [];
+      let funcArr = ['R', 'U', 'F', 'B', 'L', 'D', 'r', 'u', 'f', 'b', 'l', 'd'];
+      for (let i = 0; i < stepNum; i++) {
+          let num = parseInt(Math.random() * funcArr.length);
+          stepArr.push(funcArr[num]);
+      }
+      this.runMethodAtNo(stepArr, 0, callback);
+      return stepArr;
+  }
+
+  runMethodAtNo(arr, no, next) {
+      let self = this;
+      if (no >= arr.length - 1) {
+          if (next) {
+              this[arr[no]](next);
+          } else {
+              this[arr[no]]();
+          }
+      } else {
+          this[arr[no]](function () {
+              if (no < arr.length - 1) {
+                  no++
+                  self.runMethodAtNo(arr, no, next);
+              }
+          })
+      }
+  }
+
+  reset(){
+      for(let i=0;i<this.cubes.length;i++){
+          let matrix = this.cubes[i].matrix.clone();
+          matrix.getInverse(matrix);
+          let cube = this.cubes[i];
+          cube.applyMatrix(matrix);
+
+          for(let j=0;j<this.initStatus.length;j++){
+              let status = this.initStatus[j];
+              if (cube.id == status.cubeIndex){
+                  cube.position.x = status.x;
+                  cube.position.y = status.y;
+                  cube.position.z = status.z;
+                  cube.cubeIndex = cube.id;
+                  break;
+              }
+          }
+      }
+  }
+
 }

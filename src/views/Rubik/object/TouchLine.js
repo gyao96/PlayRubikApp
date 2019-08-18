@@ -9,7 +9,7 @@ export default class TouchLine {
 
     //实际尺寸
     this.realWidth = 1536;
-    this.realHeight = 40;
+    this.realHeight = 70;
 
     //逻辑尺寸
     this.width = this.main.originWidth;
@@ -20,15 +20,14 @@ export default class TouchLine {
       height: this.realHeight * window.innerWidth / self.realWidth
     }
     this.screenRect.left = 0;
-    this.screenRect.top = window.innerHeight / 2 - this.screenRect.height / 2;
-
+    this.screenRect.top = main.initialFrontPercent * window.innerHeight - this.screenRect.height / 2;
     //加载图片
     let loader = new THREE.TextureLoader();
-    loader.load(require('../../assets/touch-line.png'), function (texture) {
+    loader.load(require('../../../assets/touch-line.png'), function (texture) {
       let geometry = new THREE.PlaneGeometry(self.width, self.height);
       let material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
       self.plane = new THREE.Mesh(geometry, material);
-      self.plane.position.set(0, 0, 0);
+      self.plane.position.set(0, -main.originHeight * (1-main.initialFrontPercent), 0);
       self.main.scene.add(self.plane)
     }, function (xhr) {
       console.log((xhr.loaded / xhr.total * 100) + '% loaded');
