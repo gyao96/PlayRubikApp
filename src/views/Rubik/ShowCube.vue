@@ -10,6 +10,7 @@ import Rubik from './Rubik.js'
 import TouchLine from './object/TouchLine.js'
 import ResetBtn from './object/ResetBtn.js'
 import ShuffleBtn from './object/ShuffleBtn.js'
+import GithubBtn from './object/GithubBtn.js'
 const TWEEN = require('@tweenjs/tween.js')
 // require('three/examples/js/controls/OrbitControls.js')
 export default {
@@ -34,6 +35,7 @@ export default {
       touchLine: null,
       resetBtn: null,
       shuffleBtn: null,
+      githubBtn: null,
       // the raycasters and params
       raycaster: null,
       intersect: null,
@@ -190,6 +192,10 @@ export default {
           else if(this.shuffleBtn.isHover(e.touches[0])){
             console.log('shuffle btn enable')
             this.shuffleBtn.enable()
+          }
+          else if(this.githubBtn.isHover(e.touches[0])){
+            console.log('github btn enable')
+            this.githubBtn.enable()
           } else {
             this.getIntersects(e.touches[0])
             if(!this.isRotating){
@@ -214,6 +220,10 @@ export default {
           else if(this.shuffleBtn.isHover(e)){
             console.log('shuffle btn enable')
             this.shuffleBtn.enable()
+          }
+          else if(this.githubBtn.isHover(e)){
+            console.log('github btn enable')
+            this.githubBtn.enable()
           } else {
             this.getIntersects(e)
             if(!this.isRotating){
@@ -273,6 +283,10 @@ export default {
             this.resetBtn.disable()
           } else if (!this.isRotating && this.shuffleBtn.isActive && this.shuffleBtn.isHover(this.last_move)) {
             this.shuffleRubik(this.initEvent)
+            this.shuffleBtn.disable()
+          } else if (!this.isRotating && this.githubBtn.isActive && this.githubBtn.isHover(this.last_move)) {
+            window.open('https://github.com/DaddyGang/PlayRubikApp')
+            this.githubBtn.disable()
           }
           e.returnValue = true
         } break;
@@ -378,6 +392,7 @@ export default {
       this.touchLine = new TouchLine(this)
       this.resetBtn = new ResetBtn(this)
       this.shuffleBtn = new ShuffleBtn(this)
+      this.githubBtn = new GithubBtn(this)
       this.enterAnimation()
     },
     rubikResize: function(frontPercent, endPercent){
