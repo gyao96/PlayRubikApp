@@ -1,9 +1,18 @@
-# rubicdemo1
+# Interactable Rubik Simulation
 
-> experimenting with three.js
+> Build my first app with three.js
+
+#### [See the pulished demo on Heroku](https://play-rubik-cube.herokuapp.com/#/)
+
+#### User's guide
+- Touch and Mouse events both supported, for the best experience, please clip the brower window to roughly *2-by-3 aspect ratio* and *hit refresh*.
+- Hold and drag the blue line on the screen to change the display percentage of the front and end view port.
+- Swipe on the background to rotate the rubik cube.
+- Swipe on the blocks of the rubik cube to rotate one layer of the cube.
+- Reset and Shuffle button on the up right corner.
 
 ## Build Setup
-
+- Project hosted on vue-cli
 ``` bash
 # install dependencies
 npm install
