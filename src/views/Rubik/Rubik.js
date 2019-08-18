@@ -116,7 +116,7 @@ export default class Rubik {
       this.container = new THREE.Mesh(cubegeo, cubemat);
       this.container.cubeType = 'coverCube';
       this.group.add(this.container);
-      
+
       if(type=='frontView'){
         this.group.rotateY(45/180*Math.PI);
       }else{
@@ -425,6 +425,22 @@ export default class Rubik {
       0, 0, 0, 1);
 
     return matrix4;
+  }
+  
+  rotateMoveWhole(cubeIndex, direction, callback, totalTime){
+      if(cubeIndex!=null&&direction!=null){
+          let self = this;
+          totalTime = totalTime ? totalTime : this.defaultTotalTime;
+          let elements = this.cubes;
+          requestAnimationFrame(function (timestamp) {
+              self.rotateAnimation(elements, direction, timestamp, 0, 0, function () {
+                  self.updateCubeIndex(elements);
+                  if (callback) {
+                      callback();
+                  }
+              }, totalTime);
+          });
+      }
   }
 
   getMinCubeIndex() {

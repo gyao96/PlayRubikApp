@@ -36,6 +36,7 @@ export default {
       // sliding event on the cube
       startPoint: null,
       movePoint: null,
+      last_move: null,
       isRotating: false
     }
   },
@@ -49,10 +50,10 @@ export default {
       this.createObject()
       this.raycaster = new THREE.Raycaster()
       window.addEventListener('resize', this.adjustView)
-      document.addEventListener('mousedown', this.handleMouseEvent)
+      document.addEventListener('mousedown', this.handleMouseEvent, {passive: false})
       document.addEventListener('mouseup', this.handleMouseEvent)
       document.addEventListener('mousemove', this.handleMouseEvent)
-      document.addEventListener('touchstart', this.handleMouseEvent)
+      document.addEventListener('touchstart', this.handleMouseEvent, {passive: false})
       document.addEventListener('touchend', this.handleMouseEvent)
       document.addEventListener('touchmove', this.handleMouseEvent)
     },
@@ -61,67 +62,171 @@ export default {
       this.camera.updateProjectionMatrix()
       this.renderer.setSize(window.innerWidth, window.innerHeight)
     },
+    getViewDirection(type,startPoint,movePoint){
+        let direction;
+        let rad = 30*Math.PI/180;
+        let lenX = movePoint.x - startPoint.x;
+        let lenY = movePoint.y - startPoint.y;
+        if(type==this.frontViewName){
+            if(startPoint.x>window.innerWidth/2){
+                if (Math.abs(lenY) > Math.abs(lenX) * Math.tan(rad)){
+                    if(lenY<0){
+                        direction = 2.1;
+                    }else{
+                        direction = 3.1;
+                    }
+                }else{
+                    if(lenX>0){
+                        direction = 0.3;
+                    }else{
+                        direction = 1.3;
+                    }
+                }
+            }else{
+                if (Math.abs(lenY) > Math.abs(lenX) * Math.tan(rad)) {
+                    if (lenY < 0) {
+                        direction = 2.4;
+                    } else {
+                        direction = 3.4;
+                    }
+                } else {
+                    if (lenX > 0) {
+                        direction = 4.4;
+                    } else {
+                        direction = 5.4;
+                    }
+                }
+            }
+        }else{
+            if (startPoint.x > window.innerWidth / 2) {
+                if (Math.abs(lenY) > Math.abs(lenX) * Math.tan(rad)) {
+                    if (lenY < 0) {
+                        direction = 2.2;
+                    } else {
+                        direction = 3.2;
+                    }
+                } else {
+                    if (lenX > 0) {
+                        direction = 1.4;
+                    } else {
+                        direction = 0.4;
+                    }
+                }
+            } else {
+                if (Math.abs(lenY) > Math.abs(lenX) * Math.tan(rad)) {
+                    if (lenY < 0) {
+                        direction = 2.3;
+                    } else {
+                        direction = 3.3;
+                    }
+                } else {
+                    if (lenX > 0) {
+                        direction = 5.3;
+                    } else {
+                        direction = 4.3;
+                    }
+                }
+            }
+        }
+        return direction;
+    },
+    getViewRotateCubeIndex(type){
+            if (type == this.frontViewName){
+                return 10;
+            }else{
+                return 65;
+            }
+        },
+    rotateView(){
+        let self = this;
+        if (this.startPoint.y < this.touchLine.screenRect.top){
+            this.targetRubik = this.frontRubik;
+            this.anotherRubik = this.endRubik;
+        } else if (this.startPoint.y > this.touchLine.screenRect.top + this.touchLine.screenRect.height){
+            this.targetRubik = this.endRubik;
+            this.anotherRubik = this.frontRubik;
+        }
+        if (this.targetRubik && this.anotherRubik){
+            this.isRotating = true;//转动标识置为true
+            //计算整体转动方向
+            let targetType = this.targetRubik.group.childType;
+            let cubeIndex = this.getViewRotateCubeIndex(targetType);
+            let direction = this.getViewDirection(targetType, this.startPoint, this.movePoint);
+            this.targetRubik.rotateMoveWhole(cubeIndex, direction);
+            this.anotherRubik.rotateMoveWhole(cubeIndex, direction, function () {
+                self.resetRotateParams();
+            });
+        }
+    },
     handleMouseEvent(e){
-      console.log(e.type);
       switch(e.type){
         case 'touchstart': {
+          if (e.cancelable) {
+            if (!e.defaultPrevented) {
+              e.preventDefault()
+            }
+          }
           this.startPoint = null
+          this.last_move = e.touches[0]
           if(this.touchLine.isHover(e.touches[0])){
             console.log("touchline enable")
             this.touchLine.enable()
           } else {
             this.getIntersects(e.touches[0])
-            if(!this.isRotating && this.intersect){
-              this.startPoint = this.intersect.point
+            if(!this.isRotating){
+              if(this.intersect){
+                this.startPoint = this.intersect.point
+              } else {
+                this.startPoint = new THREE.Vector2(e.touches[0].clientX, e.touches[0].clientY)
+              }
             }
           }
         } break;
         case 'mousedown': {
           this.startPoint = null
+          this.last_move = e
           if(this.touchLine.isHover(e)){
-            console.log("touchline enable")
             this.touchLine.enable()
           } else {
             this.getIntersects(e)
-            if(!this.isRotating && this.intersect){
-              this.startPoint = this.intersect.point
+            if(!this.isRotating){
+              if(this.intersect){
+                this.startPoint = this.intersect.point
+              } else {
+                this.startPoint = new THREE.Vector2(e.clientX, e.clientY)
+              }
             }
           }
         } break;
         case 'mousemove': {
+          this.last_move = e
           if(this.touchLine.isActive){
             this.touchLine.move(e.clientY)
             let frontPercent = e.clientY / window.innerHeight;
             let endPercent = 1 - frontPercent
             this.rubikResize(frontPercent, endPercent)
           } else {
-            this.getIntersects(e)
-            if (!this.isRotating && this.startPoint && this.intersect) {//滑动点在魔方上且魔方没有转动
-              this.movePoint = this.intersect.point
-              // console.log(this.intersect)
-              console.log('move point', this.movePoint, 'start point', this.startPoint)
-              if (!this.movePoint.equals(this.startPoint)) {//触摸点和滑动点不一样则意味着可以得到转动向量
-                console.log('they are not the same')
-                this.rotateRubik()
+            // console.log('should move'+" "+this.isRotating+':'+this.startPoint+this.intersect)
+            if(!this.isRotating && this.startPoint && !this.intersect) {
+              this.movePoint = new THREE.Vector2(e.clientX, e.clientY)
+              if(!this.movePoint.equals(this.startPoint)) {
+                this.rotateView();
               }
             }
           }
         } break;
         case 'touchmove': {
+          this.last_move = e.touches[0];
           if(this.touchLine.isActive){
             this.touchLine.move(e.touches[0].clientY)
             let frontPercent = e.touches[0].clientY / window.innerHeight
             let endPercent = 1 - frontPercent
             this.rubikResize(frontPercent, endPercent);
           } else {
-            this.getIntersects(e.touches[0])
-            if (!this.isRotating && this.startPoint && this.intersect) {//滑动点在魔方上且魔方没有转动
-              this.movePoint = this.intersect.point
-              // console.log(this.intersect)
-              console.log('move point', this.movePoint, 'start point', this.startPoint)
-              if (!this.movePoint.equals(this.startPoint)) {//触摸点和滑动点不一样则意味着可以得到转动向量
-                console.log('they are not the same')
-                this.rotateRubik();
+            if(!this.isRotating && this.startPoint && !this.intersect) {
+              this.movePoint = new THREE.Vector2(e.touches[0].clientX, e.touches[0].clientY)
+              if(!this.movePoint.equals(this.startPoint)) {
+                this.rotateView();
               }
             }
           }
@@ -129,6 +234,17 @@ export default {
         case 'mouseup':
         case 'touchend': {
           this.touchLine.disable()
+          this.getIntersects(this.last_move)
+          if (!this.isRotating && this.startPoint && this.intersect) {//滑动点在魔方上且魔方没有转动
+            this.movePoint = this.intersect.point
+            // console.log(this.intersect)
+            console.log('move point', this.movePoint, 'start point', this.startPoint)
+            if (!this.movePoint.equals(this.startPoint)) {//触摸点和滑动点不一样则意味着可以得到转动向量
+              console.log('they are not the same')
+              this.rotateRubik();
+            }
+          }
+          e.returnValue = true
         } break;
         default: {}
       }
